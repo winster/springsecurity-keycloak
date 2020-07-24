@@ -7,6 +7,7 @@ spring:
         provider:
           keycloak:
             token-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/token
+            #token-uri: https://localhost:8443/auth/realms/ng/protocol/openid-connect/token
         registration:
           keycloak:
             client-id: app1
