@@ -10,8 +10,8 @@ spring:
             #token-uri: https://localhost:8443/auth/realms/ng/protocol/openid-connect/token
         registration:
           keycloak:
-            client-id: app1
-            client-secret: 1a18089b-d429-42d7-afa8-809c15a76d25
+            client-id: caller
+            client-secret: 91087828-7642-4da3-8ccc-8dc6a2c8effa
             authorization-grant-type: client_credentials
 logging:
   level:
