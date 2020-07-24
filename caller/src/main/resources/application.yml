@@ -1,0 +1,18 @@
+server:
+  port: 8001
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            token-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/token
+        registration:
+          keycloak:
+            client-id: app1
+            client-secret: 1a18089b-d429-42d7-afa8-809c15a76d25
+            authorization-grant-type: client_credentials
+logging:
+  level:
+    org:
+      springframework: trace
