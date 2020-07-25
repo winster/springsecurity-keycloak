@@ -6,13 +6,20 @@ spring:
       client:
         provider:
           keycloak:
-            token-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/token
-            #token-uri: https://localhost:8443/auth/realms/ng/protocol/openid-connect/token
+            #token-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/token
+            token-uri: https://localhost:8443/auth/realms/ng/protocol/openid-connect/token
         registration:
           keycloak:
             client-id: caller
             client-secret: 91087828-7642-4da3-8ccc-8dc6a2c8effa
             authorization-grant-type: client_credentials
+oauth2:
+  client:
+    registration:
+      keycloak:
+        ssl-enabled: true
+        truststore: classpath:webclient-truststore.p12
+        truststore-password: secret
 logging:
   level:
     org:

@@ -7,7 +7,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-		<module>caller</module>
 		<module>callee</module>
+		<module>caller</module>
 	</modules>
 </project>

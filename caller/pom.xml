@@ -11,7 +11,7 @@
     <groupId>com.example</groupId>
     <artifactId>caller</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>oauth2app1</name>
+    <name>caller</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>

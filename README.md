@@ -13,3 +13,9 @@
 
 * If token URL is https, there will be SSLHandshakeException - Yet to explore
 * A token is generated everytime before the last one expires - Yet to explore
+
+
+### Learnings
+
+* `DefaultReactiveOAuth2AuthorizedClientManager` is not suitable for scheduled/background tasks as it is meant for httpservlet context and it will lead to `IllegalArgumentException: serverWebExchange cannot be null`.
+So `AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager` should be used
