@@ -1,8 +1,6 @@
 package com.example.caller.config;
 
 
-import io.netty.channel.ChannelOption;
-import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -19,7 +17,6 @@ import org.springframework.security.oauth2.client.*;
 import org.springframework.security.oauth2.client.endpoint.WebClientReactiveClientCredentialsTokenResponseClient;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction;
-import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizedClientRepository;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -28,10 +25,8 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -77,7 +72,7 @@ public class WebclientConfig
     }
 
     /**
-     * The Oauth2 based WebClient bean for the web service
+     * The Oauth2 based WebClient bean for the controller service
      */
     @Bean
     public WebClient.Builder webClientBuilder(
@@ -160,7 +155,7 @@ public class WebclientConfig
 
 
     /*
-     * Log request details for the downstream web service calls
+     * Log request details for the downstream controller service calls
      */
     private ExchangeFilterFunction logRequest()
     {
@@ -183,7 +178,7 @@ public class WebclientConfig
     }
 
     /*
-     * Log response details for the downstream web service calls
+     * Log response details for the downstream controller service calls
      */
     private ExchangeFilterFunction logResponse()
     {

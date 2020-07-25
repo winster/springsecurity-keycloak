@@ -9,6 +9,7 @@
 * Take a look at `WebclientConfig.java` for the `webclient` Bean and `authorizedClientManager` bean
 * Now run both applications (using `mvn spring-boot:run` or from IDE or as you wish)
 
+* A `web` module is added to show the grant type `authorization-code`. This is based on https://spring.io/guides/tutorials/spring-boot-oauth2/  
 
 ### Learnings
 
@@ -20,3 +21,8 @@ So `AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager` should be used
 * Spring Oauth Jose library 5.3.3 still uses RestTemplate
 
 * With access token lifespan at 1 minute, causes the Client to request for new token every time. Client's scheduled job runs every 10 seconds. Changing the lifespan to 5 minutes seems to resolve the issue. OTOH, explicit logout of sessions from Auth Server does not seem to have any effect on Client or Resource Server. Yet to explore further...
+
+
+### Credits
+
+* Helped to fix the SSLHandshake error with Auth Server, https://medium.com/@karanbir.tech/spring-boot-oauth2-mutual-tls-client-client-credentials-grant-3cdb7a2a44ea

@@ -1,0 +1,18 @@
+server:
+  port: 8002
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8780/auth/realms/ng
+        registration:
+          keycloak:
+            client-id: web
+            client-secret: 770c73e8-cc39-4625-a8de-3c6201d9c692
+            authorization-grant-type: authorization_code
+logging:
+  level:
+    com:
+      example: debug
