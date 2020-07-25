@@ -22,4 +22,4 @@ So `AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager` should be used
 
 * If `Client` is using `https` protocol with `Auth Server`, then `Resource Server` should also use `https` while validating the `token` against `Auth Server`. Otherwise `iss claim` check will fail
 
-* Spring Oauth Jose library still uses RestTemplate
+* Spring Oauth Jose library 5.3.3 still uses RestTemplate
