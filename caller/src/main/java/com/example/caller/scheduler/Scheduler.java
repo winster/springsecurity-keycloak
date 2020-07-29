@@ -4,6 +4,7 @@ package com.example.caller.scheduler;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,13 +23,14 @@ public class Scheduler
 {
 
     @Autowired
-    private WebClient.Builder webClientBuilder;
+    @Qualifier("calleeWebClientBuilder")
+    private WebClient.Builder calleeWebClientBuilder;
 
     private WebClient webClient;
 
     @PostConstruct
     public void init() {
-        this.webClient = webClientBuilder.build();
+        this.webClient = calleeWebClientBuilder.build();
     }
 
     @Scheduled(fixedRate = 10000L)

@@ -18,7 +18,7 @@ So `AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager` should be used
 
 * If `Client` is using `https` protocol with `Auth Server`, then `Resource Server` should also use `https` while validating the `token` against `Auth Server`. Otherwise `iss claim` check will fail
 
-* Spring Oauth Jose library 5.3.3 still uses RestTemplate
+* Spring Oauth Jose library 5.3.3 supports both JwtDecoder and ReactiveJwtDecoder. If you want to use webclient use the latter
 
 * With access token lifespan at 1 minute, causes the Client to request for new token every time. Client's scheduled job runs every 10 seconds. Changing the lifespan to 5 minutes seems to resolve the issue. OTOH, explicit logout of sessions from Auth Server does not seem to have any effect on Client or Resource Server. Yet to explore further...
 

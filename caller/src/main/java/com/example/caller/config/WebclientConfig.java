@@ -1,15 +1,22 @@
 package com.example.caller.config;
 
 
+import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.var;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -23,10 +30,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.tcp.TcpClient;
 
 import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -42,115 +52,83 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 public class WebclientConfig
 {
 
-    @Value("${oauth2.client.registration.keycloak.ssl-enabled}")
-    private boolean sslEnabled;
-    @Value("${oauth2.client.registration.keycloak.truststore}")
-    private Resource trustStore;
-    @Value("${oauth2.client.registration.keycloak.truststore-password}")
-    private String trustStorePassword;
+    String registrationId="keycloak";
 
-    /**
-     * The authorizedClientManager for required by the webClient
-     */
+    @Value("${ssl.keycloak.enabled}")
+    private boolean keycloakSslEnabled;
+    @Value("${ssl.keycloak.truststore}")
+    private Resource keycloakTrustStore;
+    @Value("${ssl.keycloak.truststore-password}")
+    private String keycloakTrustStorePassword;
+
+    @Value("${ssl.callee.enabled}")
+    private boolean calleeSslEnabled;
+    @Value("${ssl.callee.truststore}")
+    private Resource calleeTrustStore;
+    @Value("${ssl.callee.truststore-password}")
+    private String calleeTrustStorePassword;
+
     @Bean
-    public ReactiveOAuth2AuthorizedClientManager authorizedClientManager(
-            ReactiveClientRegistrationRepository clientRegistrationRepository,
-            ReactiveOAuth2AuthorizedClientService authorizedClientService)
+    public WebClient.Builder authServerWebClientBuilder()
+            throws IOException, NoSuchAlgorithmException, KeyStoreException,
+            CertificateException
     {
-        ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider =
-            ReactiveOAuth2AuthorizedClientProviderBuilder.builder()
-                                                         .clientCredentials()
-                                                         .build();
+        SslContext sslContext = createSslContext(keycloakSslEnabled,
+                keycloakTrustStore,
+                keycloakTrustStorePassword);
 
-        AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager authorizedClientManager =
-            new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(
-                clientRegistrationRepository, authorizedClientService);
-        authorizedClientManager.setAuthorizedClientProvider(
-            authorizedClientProvider);
+        HttpClient httpClient = HttpClient.create()
+                .secure(
+                        t -> t.sslContext(sslContext));
+        ClientHttpConnector httpConnector =
+                new ReactorClientHttpConnector(httpClient);
 
-        return authorizedClientManager;
+        return WebClient.builder().clientConnector(httpConnector);
     }
 
     /**
-     * The Oauth2 based WebClient bean for the controller service
+     * The Oauth2 based WebClient bean for the scheduler service. This custom builder will introduce an exchange filter
+     * to oauth the request to Resource Server. Most of the code in the below method is about defining the oauth function
+     * and securing it (https://keycloak)
      */
     @Bean
     public WebClient.Builder webClientBuilder(
-            ReactiveOAuth2AuthorizedClientManager authorizedClientManager,
+            WebClient.Builder authServerWebClientBuilder,
             ReactiveClientRegistrationRepository clientRegistrationRepository,
             ReactiveOAuth2AuthorizedClientService auth2AuthorizedClientService)
-        throws SSLException, NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException, KeyManagementException
     {
-        String registrationId = "keycloak";
+        WebClientReactiveClientCredentialsTokenResponseClient accessTokenResponseClient =
+                new WebClientReactiveClientCredentialsTokenResponseClient();
+        accessTokenResponseClient.setWebClient(
+                authServerWebClientBuilder.build());
 
-        if (sslEnabled) {
-            /*TrustManagerFactory trustManagerFactory =
-                    TrustManagerFactory.getInstance(
-                            TrustManagerFactory.getDefaultAlgorithm());
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(
-                    trustStore.getInputStream(),
-                    trustStorePassword.toCharArray());
-            trustManagerFactory.init(keyStore);*/
+        // create custom authorizedClientProvider based on custom accessTokenResponseClient
+        ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider =
+                ReactiveOAuth2AuthorizedClientProviderBuilder.builder()
+                        .clientCredentials(
+                                c -> c.accessTokenResponseClient(
+                                        accessTokenResponseClient))
+                        .build();
 
-            SslContext sslContext = SslContextBuilder.forClient()
-                    //.clientAuth(ClientAuth.REQUIRE)
-                    .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                    .build();
+        // override default authorizedClientManager based on custom authorizedClientProvider
+        AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager authorizedClientManager =
+                new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(
+                        clientRegistrationRepository, auth2AuthorizedClientService);
 
-            WebClientReactiveClientCredentialsTokenResponseClient accessTokenResponseClient = new WebClientReactiveClientCredentialsTokenResponseClient();
-
-            // create httpClient based on customized SSLContext
-            // where SSLContext is constructed based on the properties in the properties file
-            // refer OAuth2ClientSSLPropertiesConfigurer for that
-            HttpClient httpClient = HttpClient.create()
-                    .secure(t -> {
-                        // retrieve the sslContext from the oAuth2ClientSSLPropertiesConfigurer
-                        // based on the registrationId
-                        t.sslContext(sslContext);
-                    });
-            ClientHttpConnector httpConnector = new ReactorClientHttpConnector(httpClient);
-
-            WebClient webClient = WebClient.builder().clientConnector(httpConnector).build();
-
-            accessTokenResponseClient.setWebClient(webClient);
-
-            // create custom authorizedClientProvider based on custom accessTokenResponseClient
-            ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider = ReactiveOAuth2AuthorizedClientProviderBuilder
-                    .builder()
-                    .clientCredentials(c -> {
-                        c.accessTokenResponseClient(accessTokenResponseClient);
-                    }).build();
-
-            // override default authorizedClientManager based on custom authorizedClientProvider
-            authorizedClientManager = new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(clientRegistrationRepository, auth2AuthorizedClientService);
-
-            ((AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager) authorizedClientManager).setAuthorizedClientProvider(authorizedClientProvider);
-        }
-
-        SslContext sslContext = SslContextBuilder.forClient()
-                                                 .trustManager(
-                                                     InsecureTrustManagerFactory.INSTANCE)
-                                                 .build();
-        HttpClient httpClient = HttpClient.create()
-                                          .secure(
-                                              t -> t.sslContext(sslContext));
+        authorizedClientManager.setAuthorizedClientProvider(
+                authorizedClientProvider);
 
         ServerOAuth2AuthorizedClientExchangeFilterFunction oauth =
-            new ServerOAuth2AuthorizedClientExchangeFilterFunction(
-                authorizedClientManager);
+                new ServerOAuth2AuthorizedClientExchangeFilterFunction(
+                        authorizedClientManager);
 
         // for telling which registration to use for the webclient
         oauth.setDefaultClientRegistrationId(registrationId);
 
         return WebClient.builder()
-                        .clientConnector(
-                            new ReactorClientHttpConnector(httpClient))
-
-        // base path of the client, this way we need to set the complete url again
-        .filter(oauth)
-                        .filter(logRequest())
-                        .filter(logResponse());
+                .filter(oauth)
+                .filter(logRequest())
+                .filter(logResponse());
     }
 
 
@@ -160,9 +138,9 @@ public class WebclientConfig
     private ExchangeFilterFunction logRequest()
     {
         return ExchangeFilterFunction.ofRequestProcessor(
-            c -> {
-                log.info("Request: {} {}", c.method(), c.url());
-                c.headers().forEach((n, v) -> {
+                c -> {
+                    log.info("Request: {} {}", c.method(), c.url());
+                    c.headers().forEach((n, v) -> {
                         if (!n.equalsIgnoreCase(AUTHORIZATION)) {
                             log.info("request header {}={}", n, v);
                         } else {
@@ -173,8 +151,8 @@ public class WebclientConfig
                         }
                     });
 
-                return Mono.just(c);
-            });
+                    return Mono.just(c);
+                });
     }
 
     /*
@@ -183,26 +161,60 @@ public class WebclientConfig
     private ExchangeFilterFunction logResponse()
     {
         return ExchangeFilterFunction.ofResponseProcessor(
-            c -> {
-                log.info("Response: {} {}", c.statusCode());
+                c -> {
+                    log.info("Response: {}", c.statusCode());
 
-                // if want to show the response headers in the log by any chance?
+                    // if want to show the response headers in the log by any chance?
 
-                /*
-                 * c.headers().asHttpHeaders().forEach((n, v) -> {
-                 *   testWebClientLogger.info("response header {}={}", n, v);
-                 * });
-                 */
-                return Mono.just(c);
-            });
+                    /*
+                     * c.headers().asHttpHeaders().forEach((n, v) -> {
+                     *   testWebClientLogger.info("response header {}={}", n, v);
+                     * });
+                     */
+                    return Mono.just(c);
+                });
     }
 
-    /*
-     * Even without this bean, the application works - To be researched
-     *
-     * @Bean
-     * public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-     *   return http.oauth2Client().and().build();
-     * }
-     */
+    @SneakyThrows
+    @Bean(name = "calleeWebClientBuilder")
+    public WebClient.Builder calleeWebClientBuilder(WebClient.Builder webClientBuilder)
+    {
+        log.debug("calleeWebClient :: new webclient");
+
+        SslContext sslContext = createSslContext(calleeSslEnabled,
+                calleeTrustStore,
+                calleeTrustStorePassword);
+        var tcpClient = TcpClient.create()
+                .secure(t -> t.sslContext(sslContext));
+
+        return webClientBuilder
+                .clientConnector(
+                        new ReactorClientHttpConnector(HttpClient.from(tcpClient)))
+                .defaultHeader(HttpHeaders.CONTENT_TYPE,
+                        MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+    }
+
+    private SslContext createSslContext(boolean sslEnabled,
+                                        Resource trustStore,
+                                        String trustStorePassword)
+            throws IOException, NoSuchAlgorithmException, KeyStoreException,
+            CertificateException {
+        SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
+        if (sslEnabled) {
+            TrustManagerFactory trustManagerFactory =
+                    TrustManagerFactory.getInstance(
+                            TrustManagerFactory.getDefaultAlgorithm());
+            KeyStore keyStore = KeyStore.getInstance("PKCS12");
+            keyStore.load(trustStore.getInputStream(),
+                    trustStorePassword.toCharArray());
+            trustManagerFactory.init(keyStore);
+            sslContextBuilder.trustManager(trustManagerFactory);
+        } else {
+            sslContextBuilder.trustManager(
+                    InsecureTrustManagerFactory.INSTANCE);
+        }
+
+        return sslContextBuilder.build();
+    }
 }

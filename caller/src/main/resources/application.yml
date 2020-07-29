@@ -11,16 +11,18 @@ spring:
         registration:
           keycloak:
             client-id: caller
-            client-secret: 91087828-7642-4da3-8ccc-8dc6a2c8effa
+            client-secret: 8673caca-b67f-4db2-87ea-732de5f01dd6
             authorization-grant-type: client_credentials
-oauth2:
-  client:
-    registration:
-      keycloak:
-        ssl-enabled: true
-        truststore: classpath:webclient-truststore.p12
-        truststore-password: secret
+ssl:
+  keycloak:
+    enabled: true
+    truststore: classpath:keycloak-truststore.p12
+    truststore-password: secret
+  callee:
+    enabled: true
+    truststore: classpath:callee-truststore.p12
+    truststore-password: secret
 logging:
   level:
     org:
-      springframework: trace
+      springframework: info
