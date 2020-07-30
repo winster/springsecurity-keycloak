@@ -9,14 +9,16 @@
 * Take a look at `WebclientConfig.java` for the `webclient` Bean and `authorizedClientManager` bean
 * Now run both applications (using `mvn spring-boot:run` or from IDE or as you wish)
 
-* A `web` module is added to show the grant type `authorization-code`. This is based on https://spring.io/guides/tutorials/spring-boot-oauth2/  
+* A `web` module is added to show the grant type `authorization-code`. The code is based on https://spring.io/guides/tutorials/spring-boot-oauth2/ and extended to work with SSL enabled auth server.   
 
 ### Learnings
 
 * `DefaultReactiveOAuth2AuthorizedClientManager` is not suitable for scheduled/background tasks as it is meant for httpservlet context and it will lead to `IllegalArgumentException: serverWebExchange cannot be null`.
 So `AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager` should be used
 
-* If `Client` is using `https` protocol with `Auth Server`, then `Resource Server` should also use `https` while validating the `token` against `Auth Server`. Otherwise `iss claim` check will fail
+* If `Client` is using `https` protocol with `Auth Server`, then `Resource Server` should also use `https` while validating the `token` against `Auth Server`. Otherwise `iss claim` check will fail.
+
+* But previous statement is not valid for authorization_code grant type. I have used https uri for all endpoints except jwkset and it worked. `jwkset` was excluded as I could not find a way to use a custom JwtDecoder. See it working in `web` module 
 
 * Spring Oauth Jose library 5.3.3 supports both JwtDecoder and ReactiveJwtDecoder. If you want to use webclient use the latter
 

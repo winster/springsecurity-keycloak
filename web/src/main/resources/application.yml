@@ -1,18 +1,57 @@
 server:
-  port: 80
+  port: 8002
+  ssl:
+    enabled: true
+    key-store: classpath:web.p12
+    key-store-password: secret
 spring:
   security:
     oauth2:
       client:
         provider:
           keycloak:
+            authorization-uri: https://localhost:8443/auth/realms/ng/protocol/openid-connect/auth
+            token-uri: https://localhost:8443/auth/realms/ng/protocol/openid-connect/token
+            user-info-uri: https://localhost:8443/auth/realms/ng/protocol/openid-connect/userinfo
+            user-info-authentication-method: header
+            user-name-attribute: sub
+            jwk-set-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/certs
+          keycloak1:
             issuer-uri: http://localhost:8780/auth/realms/ng
+          keycloak2:
+            authorization-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/auth
+            token-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/token
+            user-info-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/userinfo
+            user-info-authentication-method: header
+            user-name-attribute: sub
+            jwk-set-uri: http://localhost:8780/auth/realms/ng/protocol/openid-connect/certs
         registration:
           keycloak:
             client-id: web
-            client-secret: 770c73e8-cc39-4625-a8de-3c6201d9c692
+            client-secret: 696c3878-ad12-4d81-bd4a-7629e271a7c9
             authorization-grant-type: authorization_code
+            provider: keycloak
+            clientAuthenticationMethod: basic
+            #clientName: kc
+            scope:
+              - openid
+              - address
+              - email
+              - microprofile-jwt
+              - offline_access
+              - phone
+              - profile
+              - roles
+              - web-origins
+            redirect-uri: https://localhost:8002/login/oauth2/code/keycloak
+ssl:
+  keycloak:
+    enabled: true
+    truststore: classpath:keycloak-truststore.p12
+    truststore-password: secret
 logging:
   level:
+    org:
+      springframework: debug
     com:
       example: debug
