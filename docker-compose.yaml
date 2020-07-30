@@ -1,0 +1,20 @@
+version: '3'
+services:
+  kc:
+    container_name: kc
+    image: quay.io/keycloak/keycloak:11.0.0
+    ports:
+      - 8080:8080
+      - 8443:8443
+    volumes:
+      - /Users/winster/Desktop/workspace/certs:/etc/x509/https
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+  hp:
+    container_name: hp
+    image: haproxy:2.2
+    ports:
+      - 8888:8888
+    volumes:
+      - ./haproxy/conf:/usr/local/etc/haproxy:ro
