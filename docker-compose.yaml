@@ -7,14 +7,15 @@ services:
       - 8080:8080
       - 8443:8443
     volumes:
-      - /Users/winster/Desktop/workspace/certs:/etc/x509/https
+      - /c/Users/wjose/Downloads/docker-shared/keycloak:/etc/x509/https
     environment:
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=admin
   hp:
     container_name: hp
-    image: haproxy:2.2
+    image: haproxy:2.1
     ports:
       - 8888:8888
     volumes:
-      - ./haproxy/conf:/usr/local/etc/haproxy:ro
+      - /c/Users/wjose/Downloads/docker-shared/haproxy/conf:/usr/local/etc/haproxy:ro
+      - /c/Users/wjose/Downloads/docker-shared/haproxy/cert:/etc/ssl/certs/
