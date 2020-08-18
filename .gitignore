@@ -33,3 +33,10 @@ build/
 .vscode/
 
 .DS_Store
+
+### certs
+
+.pfx
+.key
+.csr
+.pem
